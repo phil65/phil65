@@ -2259,7 +2259,7 @@
                                     </svg>
                                     <div class="name">
                                         <span>jrlomas/miro-extruder</span>
-                                        <span>starred 14 days ago</span>
+                                        <span>starred 15 days ago</span>
                                     </div>
                                 </div>
                                 <div class="field description">The most compact double set BMG extruder</div>
@@ -2347,7 +2347,7 @@
                                     </svg>
                                     <div class="name">
                                         <span>ozancs/voyager-ui</span>
-                                        <span>starred 25 days ago</span>
+                                        <span>starred 26 days ago</span>
                                     </div>
                                 </div>
                                 <div class="field description">Voyager UI: a web interface for Klipper 3D printers. Runs next to Mainsail or Fluidd, talks to Moonraker.</div>
@@ -2400,7 +2400,7 @@
                                     </svg>
                                     <div class="name">
                                         <span>Amekyras/tulip</span>
-                                        <span>starred 29 days ago</span>
+                                        <span>starred Sep 27 2026</span>
                                     </div>
                                 </div>
                                 <div class="field description">Tulip - a pin mod with front idler tensioners for the Voron v0.2</div>
@@ -2729,7 +2729,7 @@
             </section>
             <footer>
                 <span>These metrics include private contributions</span>
-                <span>Last updated 27 Oct 2026, 06:44:03 (timezone Asia/Dhaka) with lowlighter/metrics@3.34.0</span>
+                <span>Last updated 27 Oct 2026, 18:26:07 (timezone Asia/Dhaka) with lowlighter/metrics@3.34.0</span>
             </footer>
         </div>
         <div xmlns="http://www.w3.org/1999/xhtml" id="metrics-end"></div>
