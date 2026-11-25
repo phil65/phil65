@@ -1,14 +1,14 @@
 ### Hi, I'm Philipp
 
 I build developer tools in Python, and have done UI/UX on many stacks since 2012:
-Kodi (C++ core, Python add-on API, templated skin markup), Qt desktop apps, web, terminal UIs
-and editor extensions. Today most of it flows into **[agentpool](https://github.com/phil65/agentpool)**,
+Kodi (160 merged PRs to its C++ core, plus Python add-ons and templated skin markup), Qt desktop
+apps, web, terminal UIs and editor extensions. Today most of it flows into **[agentpool](https://github.com/phil65/agentpool)**,
 an experimental hub that connects AI agents over ACP and MCP.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/timeline-dark.svg">
   <source media="(prefers-color-scheme: light)" srcset="assets/timeline-light.svg">
-  <img alt="Timeline 2012 to now: Kodi, Qt desktop, web, editors and TUIs, data science, docs and Markdown, API wrappers, agents and protocols" src="assets/timeline-light.svg" width="100%">
+  <img alt="How my focus moved, 2012 to now: Kodi; desktop UI and data science; docs and static sites; LLM tooling; agents; agent protocols. UI / UX across stacks runs through all of it." src="assets/timeline-light.svg" width="100%">
 </picture>
 
 <picture>
@@ -36,4 +36,4 @@ an experimental hub that connects AI agents over ACP and MCP.
 
 </details>
 
-<sub>Graphics are generated from [`data/profile.toml`](data/profile.toml) by [`scripts/generate.py`](scripts/generate.py).</sub>
+<sub>The timeline is an approximation based on the repositories I maintain today; many older packages were deleted, archived or renamed. Graphics are generated from [`data/profile.toml`](data/profile.toml) by [`scripts/generate.py`](scripts/generate.py).</sub>

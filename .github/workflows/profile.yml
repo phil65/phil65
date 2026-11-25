@@ -1,4 +1,4 @@
-# Re-render the profile graphics weekly (star counts, the "now" marker) and on data changes.
+# Re-render the profile graphics weekly (ecosystem star counts) and on data changes.
 name: Profile graphics
 on:
   schedule: [{cron: "0 6 * * 1"}]

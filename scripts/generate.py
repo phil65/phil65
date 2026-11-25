@@ -11,7 +11,6 @@ fonts, no external resources, so they survive GitHub's image sanitizing (rendere
 from __future__ import annotations
 
 import argparse
-import datetime as dt
 import json
 import os
 from pathlib import Path
@@ -47,6 +46,7 @@ THEMES = {
             "amber": "#fbbf24",
             "green": "#34d399",
             "violet": "#a78bfa",
+            "indigo": "#818cf8",
             "cyan": "#22d3ee",
             "neutral": "#8b949e",
         },
@@ -67,6 +67,7 @@ THEMES = {
             "amber": "#b45309",
             "green": "#059669",
             "violet": "#7c3aed",
+            "indigo": "#4f46e5",
             "cyan": "#0891b2",
             "neutral": "#59636e",
         },
@@ -123,197 +124,143 @@ def base_css(theme: dict) -> str:
 # --- timeline ----------------------------------------------------------------------------
 
 T_W = 1000
-X0, X1 = 224, 968
-PITCH = 60
-ROW0 = 112
+GAP = 12
 
 
-def month(s: str, now: dt.date) -> float:
-    if s == "now":
-        return now.year + (now.month - 0.5) / 12
-    y, m = s.split("-")
-    return int(y) + (int(m) - 0.5) / 12
+def wrap(s: str, size: float, width: float) -> list[str]:
+    lines: list[str] = []
+    for word in s.split():
+        if lines and text_width(f"{lines[-1]} {word}", size) <= width:
+            lines[-1] += f" {word}"
+        else:
+            lines.append(word)
+    return lines
 
 
-def make_scale(points: list[list[float]]):
-    years = [p[0] for p in points]
-    weights = [p[1] for p in points]
-    total = sum(w * (years[i + 1] - years[i]) for i, w in enumerate(weights[:-1]))
-    k = (X1 - X0) / total
-
-    def x(v: float) -> float:
-        acc = X0
-        for i in range(len(years) - 1):
-            a, b = years[i], years[i + 1]
-            if v <= b or i == len(years) - 2:
-                return acc + (min(v, b) - a) * weights[i] * k
-            acc += (b - a) * weights[i] * k
-        return acc
-
-    return x, [int(y) for y in range(int(years[0]), int(years[-1]))], weights, years, k
-
-
-def render_timeline(cfg: dict, stars: dict[str, int], theme: dict, now: dt.date) -> str:
+def render_timeline(cfg: dict, theme: dict) -> str:
+    """Periods as columns of topics, joined by an axis, with a UI / UX rail underneath."""
     c = theme["colors"]
-    scale = [list(p) for p in cfg["scale"]]
-    scale[-1][0] = max(scale[-1][0], now.year + 1)  # keep "now" inside the plot
-    x, year_list, weights, years, k = make_scale(scale)
-    tracks = [(lane, tr) for lane in cfg["lane"] for tr in lane["track"]]
-    h = ROW0 + len(tracks) * PITCH + 18
-    body: list[str] = []
+    ui_col = c["pink"]
+    periods = cfg["period"]
+    n = len(periods)
+    cw = (T_W - 64 - (n - 1) * GAP) / n
+    cols = [32 + i * (cw + GAP) for i in range(n)]
+    inner = cw - 30
+
+    axis_y, card_y = 104, 126
+    wrapped = [[wrap(tp, 12, inner) for tp in p["topics"]] for p in periods]
+    card_h = 46 + max(sum(len(w) * 15 + 7 for w in ws) for ws in wrapped) + 4
+    rail_top = card_y + card_h + 20
+    ui_wrapped = [wrap(p["ui"], 12, cw - 12) for p in periods]
+    rail_y = rail_top + 42
+    band_bottom = rail_y + 26 + max(len(w) for w in ui_wrapped) * 15 + 6
+    note = cfg.get("footnote")
+    h = int(band_bottom + (40 if note else 32))
+
+    body: list[str] = [t(32, 40, cfg["title"], "title"), t(32, 60, cfg["subtitle"], "sub")]
     defs: list[str] = []
+    centers = [x + cw / 2 for x in cols]
 
-    body.append(t(32, 40, cfg["title"], "title"))
-    body.append(t(32, 60, cfg["subtitle"], "sub"))
-
-    # year grid: always label the years where the scale changes, the others where there is room
-    labelled = [x(y) for y in years if y in year_list]
-    for yr in year_list:
-        gx = x(yr)
-        if yr not in years and all(abs(gx - o) >= 40 for o in labelled):
-            labelled.append(gx)
-        body.append(
-            f'<line x1="{gx:.1f}" y1="98" x2="{gx:.1f}" y2="{h - 14}" stroke="{theme["faint"]}"/>'
-        )
-        if any(abs(gx - o) < 0.01 for o in labelled):
-            body.append(t(gx, 92, str(yr), "year mono", "middle"))
-
-    # now marker
-    nx = x(month("now", now))
-    body.append(
-        f'<line x1="{nx:.1f}" y1="98" x2="{nx:.1f}" y2="{h - 14}" stroke="{c["violet"]}" '
-        'stroke-dasharray="2 4" opacity=".7"/>'
+    # axis through all period nodes, with a gradient across the period colours
+    stops = "".join(
+        f'<stop offset="{i / (n - 1):.3f}" stop-color="{c[p["color"]]}"/>' for i, p in enumerate(periods)
     )
-    body.append(t(nx, 76, "now", "now", "middle"))
-    body.append(f'<circle cx="{nx:.1f}" cy="98" r="3.5" fill="{c["violet"]}"/>')
-    body.append(
-        f'<circle class="ping" cx="{nx:.1f}" cy="98" r="3.5" fill="none" stroke="{c["violet"]}"/>'
-    )
-
-    clip_rects: list[str] = []
-    row = 0
-    for lane in cfg["lane"]:
-        col = c[lane["color"]]
-        n = len(lane["track"])
-        top = ROW0 + row * PITCH
-        # lane bracket (and a rotated lane label when the lane groups several tracks)
-        body.append(
-            f'<rect x="46" y="{top + 8}" width="3" height="{n * PITCH - 16}" rx="1.5" fill="{col}"/>'
-        )
-        if n > 1:
-            cy = top + n * PITCH / 2
-            body.append(
-                f'<text x="38" y="{cy:g}" class="lane" text-anchor="middle" fill="{col}" '
-                f'transform="rotate(-90 38 {cy:g})" style="fill:{col}">'
-                f"{escape(lane['name'].upper())}</text>"
-            )
-        if row:
-            body.append(
-                f'<line x1="32" y1="{top:g}" x2="{T_W - 32}" y2="{top:g}" '
-                f'stroke="{theme["faint"]}" stroke-dasharray="1 3"/>'
-            )
-        for tr in lane["track"]:
-            by = ROW0 + row * PITCH + 30  # bar centre
-            delay = 0.15 + row * 0.09
-            body.append(t(58, by - 3, tr["name"], "tname"))
-            body.append(t(58, by + 12, tr.get("sub", ""), "tsub"))
-            hl = tr.get("highlight", False)
-            bh = 10 if hl else 8
-            for a, b in tr["spans"]:
-                xa, xb = x(month(a, now)), x(month(b, now))
-                gid = f"g{row}"
-                if gid not in "".join(defs):
-                    defs.append(
-                        f'<linearGradient id="{gid}" x1="0" x2="1">'
-                        f'<stop offset="0" stop-color="{col}" stop-opacity=".45"/>'
-                        f'<stop offset="1" stop-color="{c["cyan"] if hl else col}"/>'
-                        "</linearGradient>"
-                    )
-                rect = (
-                    f'x="{xa:.1f}" y="{by - bh / 2:g}" width="{max(xb - xa, 4):.1f}" '
-                    f'height="{bh}" rx="{bh / 2:g}"'
-                )
-                if hl:
-                    body.append(
-                        f'<rect {rect} fill="{col}" opacity=".25" class="glow bar" '
-                        f'style="animation-delay:{delay:.2f}s"/>'
-                    )
-                body.append(
-                    f'<rect {rect} fill="url(#{gid})" class="bar" style="animation-delay:{delay:.2f}s"/>'
-                )
-                clip_rects.append(f"<rect {rect}/>")
-            # milestone labels: greedy placement into slots, no overlaps
-            slots: dict[str, list[tuple[float, float]]] = {"above": [], "below": [], "below2": []}
-            order = ["below", "above", "below2"]
-            if note := tr.get("note"):
-                xa = x(month(tr["spans"][0][0], now))
-                body.append(t(xa, by - 10, note, "note"))
-                slots["above"].append((xa, xa + text_width(note, 11)))
-                order = ["below", "below2"]
-            ys = {"above": by - 10, "below": by + 19, "below2": by + 32}
-            for ms in sorted(tr["milestones"], key=lambda m: (m.get("minor", False), not m.get("strong"))):
-                mx = x(month(ms["date"], now))
-                minor = ms.get("minor", False)
-                body.append(
-                    f'<circle cx="{mx:.1f}" cy="{by}" r="{2.2 if minor else 4.2}" '
-                    f'fill="{theme["bg1"] if not minor else col}" stroke="{col}" '
-                    f'stroke-width="{0 if minor else 2.2}" class="ms" '
-                    f'style="animation-delay:{delay + 0.6:.2f}s"/>'
-                )
-                if minor:
-                    continue
-                label = fill_stars(ms["label"], stars)
-                w = text_width(label, 11.5)
-                lx, anchor = mx - 3, "start"
-                if lx + w > T_W - 24:
-                    lx, anchor = mx + 3, "end"
-                span = (lx, lx + w) if anchor == "start" else (lx - w, lx)
-                for slot in order:
-                    if all(span[1] + 8 < s0 or span[0] - 8 > s1 for s0, s1 in slots[slot]):
-                        slots[slot].append(span)
-                        body.append(
-                            t(lx, ys[slot], label, "ml strong" if ms.get("strong") else "ml", anchor, f' style="animation-delay:{delay + 0.7:.2f}s"')
-                        )
-                        break
-                else:
-                    print(f"warning: no room for label {label!r} in track {tr['name']!r}")
-            row += 1
-
-    # light sweep through the bars: a moving gradient on a static, clipped rect
-    sweep_op = 0.35 if theme is THEMES["dark"] else 0.7
-    defs.append(f'<clipPath id="bars">{"".join(clip_rects)}</clipPath>')
+    # userSpaceOnUse: a bounding-box gradient on a zero-height line would not render at all
     defs.append(
-        f'<linearGradient id="sweep" gradientUnits="userSpaceOnUse" x1="{X0 - 140}" x2="{X0}">'
-        '<stop offset="0" stop-color="#fff" stop-opacity="0"/>'
-        f'<stop offset=".5" stop-color="#fff" stop-opacity="{sweep_op}"/>'
-        '<stop offset="1" stop-color="#fff" stop-opacity="0"/>'
-        f'<animateTransform attributeName="gradientTransform" type="translate" dur="8s" '
-        f'begin="1.4s" repeatCount="indefinite" keyTimes="0;.7;1" '
-        f'values="0 0;{X1 - X0 + 140} 0;{X1 - X0 + 140} 0"/>'
-        "</linearGradient>"
+        f'<linearGradient id="axis" gradientUnits="userSpaceOnUse" x1="{centers[0]:.1f}" '
+        f'x2="{centers[-1]:.1f}" y1="0" y2="0">{stops}</linearGradient>'
+    )
+    defs.append(f'<path id="ax" d="M{centers[0]:.1f} {axis_y} H{centers[-1]:.1f}"/>')
+    body.append(
+        f'<path d="M{centers[0]:.1f} {axis_y} H{centers[-1]:.1f}" stroke="url(#axis)" '
+        'stroke-width="2" fill="none" pathLength="1" class="draw"/>'
     )
     body.append(
-        f'<rect clip-path="url(#bars)" x="{X0}" y="{ROW0}" width="{X1 - X0}" '
-        f'height="{h - ROW0}" fill="url(#sweep)"/>'
+        f'<circle r="3" fill="{theme["text"]}" opacity=".8"><animateMotion dur="6s" repeatCount="indefinite" '
+        'begin="-1s"><mpath href="#ax"/></animateMotion></circle>'
     )
+
+    for i, (p, x, cx) in enumerate(zip(periods, cols, centers)):
+        col = c[p["color"]]
+        last = i == n - 1
+        d = f"animation-delay:{0.15 + i * 0.12:.2f}s"
+        # period node + years
+        body.append(t(cx, axis_y - 14, p["years"], "years", "middle", f' style="fill:{col};{d}"'))
+        body.append(
+            f'<circle cx="{cx:.1f}" cy="{axis_y}" r="6" fill="{theme["bg1"]}" stroke="{col}" '
+            f'stroke-width="2.5" class="pop" style="{d}"/>'
+        )
+        if last:
+            body.append(f'<circle cx="{cx:.1f}" cy="{axis_y}" r="2.5" fill="{col}"/>')
+            body.append(
+                f'<circle class="ping" cx="{cx:.1f}" cy="{axis_y}" r="6" fill="none" stroke="{col}"/>'
+            )
+        body.append(
+            f'<line x1="{cx:.1f}" y1="{axis_y + 6}" x2="{cx:.1f}" y2="{card_y}" stroke="{col}" '
+            'stroke-opacity=".5" stroke-dasharray="2 3"/>'
+        )
+        # card
+        g = [
+            f'<rect x="{x:.1f}" y="{card_y}" width="{cw:.1f}" height="{card_h}" rx="10" '
+            f'fill="{theme["panel"]}" stroke="{col if last else theme["panel_border"]}" '
+            f'stroke-opacity="{0.6 if last else 1}"/>',
+            f'<rect x="{x + 14:.1f}" y="{card_y}" width="28" height="2" rx="1" fill="{col}"/>',
+            t(x + 14, card_y + 26, p["name"], "era"),
+        ]
+        y = card_y + 50
+        for lines in wrapped[i]:
+            g.append(f'<circle cx="{x + 17:.1f}" cy="{y - 4}" r="2.5" fill="{col}"/>')
+            for j, line in enumerate(lines):
+                g.append(t(x + 26, y + j * 15, line, "topic"))
+            y += len(lines) * 15 + 7
+        body.append(f'<g class="card" style="animation-delay:{0.3 + i * 0.12:.2f}s">{"".join(g)}</g>')
+
+    # UI / UX rail: the thread that runs through every period
+    body.append(
+        f'<rect x="32" y="{rail_top}" width="{T_W - 64}" height="{band_bottom - rail_top:.0f}" rx="10" '
+        f'fill="{ui_col}" fill-opacity="{theme["chip_alpha"] * 0.6:.3f}" stroke="{ui_col}" stroke-opacity=".3"/>'
+    )
+    body.append(t(46, rail_top + 21, cfg["ui_label"].upper(), "ptitle", extra=f' style="fill:{ui_col}"'))
+    rail = f"M{centers[0]:.1f} {rail_y} H{centers[-1]:.1f}"
+    defs.append(f'<path id="rl" d="{rail}"/>')
+    body.append(
+        f'<path d="{rail}" stroke="{ui_col}" stroke-width="2" stroke-opacity=".7" fill="none" '
+        'stroke-dasharray="4 4" class="flow"/>'
+    )
+    for i, cx in enumerate(centers):
+        body.append(
+            f'<circle cx="{cx:.1f}" cy="{rail_y}" r="5" fill="{theme["bg1"]}" stroke="{ui_col}" '
+            f'stroke-width="2" class="pop" style="animation-delay:{0.6 + i * 0.12:.2f}s"/>'
+        )
+        for j, line in enumerate(ui_wrapped[i]):
+            body.append(
+                t(cx, rail_y + 24 + j * 15, line, "ui", "middle", f' style="animation-delay:{0.7 + i * 0.12:.2f}s"')
+            )
+    body.append(
+        f'<circle r="3.5" fill="{ui_col}"><animateMotion dur="6s" repeatCount="indefinite" '
+        'begin="-3s"><mpath href="#rl"/></animateMotion></circle>'
+    )
+
+    if note:
+        body.append(t(T_W - 32, h - 16, note, "foot", "end"))
 
     css = base_css(theme) + (
-        f".year{{font-size:11px;fill:{theme['muted']}}}"
-        f".now{{font-size:11px;font-weight:600;fill:{c['violet']}}}"
-        f".lane{{font-size:10px;font-weight:700;letter-spacing:.12em}}"
-        f".tname{{font-size:13px;font-weight:600}}"
-        f".tsub{{font-size:11px;fill:{theme['muted']}}}"
-        f".note{{font-size:11px;font-style:italic;fill:{theme['muted']};animation:fade 1s ease-out .3s both}}"
-        f".ml{{font-size:11.5px;animation:fade .6s ease-out both}}"
-        f".strong{{font-weight:700}}"
-        ".bar{transform-box:fill-box;transform-origin:left center;"
-        "animation:grow 1.1s cubic-bezier(.2,.7,.2,1) both}"
-        ".ms{animation:fade .5s ease-out both}"
-        ".glow{filter:blur(3px)}"
+        f".foot{{font-size:11px;font-style:italic;fill:{theme['muted']}}}"
+        ".years{font-size:13px;font-weight:700;animation:fade .6s ease-out both}"
+        ".era{font-size:14px;font-weight:700}"
+        ".topic{font-size:12px}"
+        f".ptitle{{font-size:10.5px;font-weight:700;letter-spacing:.1em}}"
+        ".ui{font-size:12px;animation:fade .6s ease-out both}"
+        ".card{animation:fade .7s ease-out both}"
+        ".pop{transform-box:fill-box;transform-origin:center;animation:pop .5s cubic-bezier(.3,1.6,.5,1) both}"
+        ".draw{stroke-dasharray:1;animation:draw 1.2s ease-out both}"
+        ".flow{animation:flow 6s linear infinite}"
         ".ping{transform-box:fill-box;transform-origin:center;animation:ping 2s ease-out infinite}"
-        "@keyframes grow{from{transform:scaleX(0)}}"
         "@keyframes fade{from{opacity:0}}"
-        "@keyframes ping{0%{transform:scale(1);opacity:.9}100%{transform:scale(3.2);opacity:0}}"
+        "@keyframes pop{from{transform:scale(0)}}"
+        "@keyframes draw{from{stroke-dashoffset:1}}"
+        "@keyframes flow{to{stroke-dashoffset:-48}}"
+        "@keyframes ping{0%{transform:scale(1);opacity:.9}100%{transform:scale(2.6);opacity:0}}"
     )
     body.insert(0, f"<defs>{''.join(defs)}</defs>")
     return svg_doc(T_W, h, f"{USER}: {cfg['subtitle']}", css, body, theme)
@@ -503,11 +450,10 @@ def main() -> None:
         STARS.write_text(json.dumps(fetch_stars(), indent=2) + "\n")
     stars = json.loads(STARS.read_text())
     cfg = tomllib.loads(DATA.read_text())
-    now = dt.date.today()
     ASSETS.mkdir(exist_ok=True)
     for name, theme in THEMES.items():
         outputs = {
-            f"timeline-{name}.svg": render_timeline(cfg["timeline"], stars, theme, now),
+            f"timeline-{name}.svg": render_timeline(cfg["timeline"], theme),
             f"ecosystem-{name}.svg": render_ecosystem(cfg["ecosystem"], stars, theme),
         }
         for fn, svg in outputs.items():

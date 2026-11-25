@@ -2,133 +2,87 @@
 #   python3 scripts/generate.py            # render assets/*.svg
 #   python3 scripts/generate.py --fetch    # refresh data/stars.json from the GitHub API first
 #
-# Labels may contain {stars:<repo>}, replaced with the star count from data/stars.json.
-# Dates are "YYYY-MM". "now" means the month the graphics are rendered.
+# Ecosystem labels may contain {stars:<repo>}, replaced with the count from data/stars.json.
 
+# Timeline: how the focus shifted, as periods with topics (no package names).
+# `ui` is the period's stop on the "UI / UX across stacks" rail at the bottom.
+# The last period is drawn as the current one.
 [timeline]
-title = "2012 → now"
-subtitle = "Fourteen years of open source, from Kodi to agent protocols"
-# Piecewise x scale: [year, weight per year]. Dense recent years get more room.
-scale = [[2012, 40], [2018, 20], [2023, 98], [2027, 0]]
+title = "How my focus moved"
+subtitle = "Fourteen years of open source, 2012 → now"
+ui_label = "UI / UX across stacks"
+footnote = "An approximation based on the repositories I maintain today; many older packages were deleted, archived or renamed."
 
-[[timeline.lane]]
-name = "UI / UX"
-color = "pink"
-
-  [[timeline.lane.track]]
-  name = "Kodi"
-  sub = "160 merged core PRs"
-  note = "C++ core · Python add-on API · templated skin markup"
-  spans = [["2012-03", "2018-02"]]
-  milestones = [
-    { date = "2012-03", label = "Aeon Nox" },
-    { date = "2012-12", label = "first core PR", minor = true },
-    { date = "2013-03", label = "script.extendedinfo ★{stars:script.extendedinfo}" },
-    { date = "2014-11", label = "script.toolbox", minor = true },
-    { date = "2016-08", label = "Estuary, Kodi's default skin" },
-    { date = "2018-02", label = "last core PR", minor = true },
-  ]
-
-  [[timeline.lane.track]]
-  name = "Qt desktop"
-  sub = "PyQt6 / PySide6"
-  spans = [["2019-03", "now"]]
-  milestones = [
-    { date = "2019-03", label = "PrettyQt ★{stars:PrettyQt}" },
-    { date = "2023-08", label = "qtpy PRs", minor = true },
-  ]
-
-  [[timeline.lane.track]]
-  name = "Web"
-  sub = "Streamlit · Reflex · TypeScript"
-  spans = [["2025-03", "now"]]
-  milestones = [
-    { date = "2025-03", label = "streambricks" },
-    { date = "2025-04", label = "Reflex helpers", minor = true },
-    { date = "2026-11", label = "mmd-viz · framesheet" },
-  ]
-
-  [[timeline.lane.track]]
-  name = "Editors & TUI"
-  sub = "Sublime · Zed · Textual"
-  spans = [["2015-03", "2016-12"], ["2024-10", "now"]]
-  milestones = [
-    { date = "2015-03", label = "SublimeKodi" },
-    { date = "2016-04", label = "KodiDevKit" },
-    { date = "2024-10", label = "Zed extension" },
-    { date = "2024-12", label = "promptantic", minor = true },
-    { date = "2025-02", label = "Textual widgets", minor = true },
-    { date = "2026-11", label = "acptui" },
-  ]
-
-[[timeline.lane]]
-name = "Data science"
+[[timeline.period]]
+years = "2012–2018"
+name = "Kodi"
 color = "blue"
+topics = [
+  "C++ core",
+  "Python add-on API",
+  "templated skin markup",
+  "media metadata & web APIs",
+  "editor tooling for Kodi devs",
+]
+ui = "media-center UI, Kodi's default skin"
 
-  [[timeline.lane.track]]
-  name = "Data science"
-  sub = "pandas · scikit-learn"
-  spans = [["2019-01", "2023-04"]]
-  milestones = [
-    { date = "2019-01", label = "datacook" },
-    { date = "2019-01", label = "ibadatfile ★{stars:ibadatfile}" },
-    { date = "2020-06", label = "pandastools", minor = true },
-    { date = "2022-11", label = "cutepandas" },
-  ]
+[[timeline.period]]
+years = "2019–2022"
+name = "Desktop & data"
+color = "green"
+topics = [
+  "cross-platform desktop UI",
+  "data science & dataframes",
+  "Python wrappers for C libraries",
+]
+ui = "Qt desktop apps"
 
-[[timeline.lane]]
+[[timeline.period]]
+years = "2023"
 name = "Docs"
 color = "amber"
+topics = [
+  "Markdown",
+  "static site generation",
+  "documentation tooling",
+  "templating",
+]
+ui = "static websites"
 
-  [[timeline.lane.track]]
-  name = "Docs & Markdown"
-  sub = "static site generation"
-  spans = [["2023-07", "now"]]
-  milestones = [
-    { date = "2023-07", label = "mknodes" },
-    { date = "2023-11", label = "jinjarope" },
-    { date = "2024-11", label = "mkdown", minor = true },
-    { date = "2025-05", label = "mkconvert", minor = true },
-    { date = "2026-11", label = "mknodes 4" },
-  ]
+[[timeline.period]]
+years = "2024"
+name = "LLM tooling"
+color = "indigo"
+topics = [
+  "LLM tooling",
+  "MCP servers",
+  "tool schemas",
+  "repository & API clients",
+]
+ui = "editor extensions, terminal prompts"
 
-[[timeline.lane]]
-name = "Tooling"
-color = "green"
-
-  [[timeline.lane.track]]
-  name = "API wrappers"
-  sub = "Python APIs · Rust bindings"
-  spans = [["2024-10", "now"]]
-  milestones = [
-    { date = "2024-11", label = "githarbor" },
-    { date = "2024-11", label = "yamling", minor = true },
-    { date = "2025-02", label = "upathtools" },
-    { date = "2025-03", label = "anyenv", minor = true },
-    { date = "2025-03", label = "sublime-search" },
-    { date = "2026-02", label = "frizbee-rs", minor = true },
-  ]
-
-[[timeline.lane]]
-name = "AI"
+[[timeline.period]]
+years = "2025"
+name = "Agents"
 color = "violet"
+topics = [
+  "agents & orchestration",
+  "sandboxed code execution",
+  "filesystem abstractions",
+  "Rust bindings",
+]
+ui = "web UIs"
 
-  [[timeline.lane.track]]
-  name = "Agents & protocols"
-  sub = "MCP · ACP · agent SDKs"
-  spans = [["2024-11", "now"]]
-  highlight = true
-  milestones = [
-    { date = "2024-11", label = "LLMling" },
-    { date = "2024-12", label = "agentpool ★{stars:agentpool}", strong = true },
-    { date = "2024-12", label = "MCP server", minor = true },
-    { date = "2025-01", label = "toprompt", minor = true },
-    { date = "2025-04", label = "schemez", minor = true },
-    { date = "2025-11", label = "ACP spec PRs" },
-    { date = "2025-12", label = "exxec", minor = true },
-    { date = "2026-03", label = "codexed", minor = true },
-    { date = "2026-11", label = "aclientp" },
-  ]
+[[timeline.period]]
+years = "2026"
+name = "Protocols"
+color = "cyan"
+topics = [
+  "agent protocols (ACP)",
+  "coding-agent backends",
+  "animated SVG & demo videos",
+]
+ui = "terminal UIs"
 
 [ecosystem]
 title = "agentpool and the libraries it is built from"
