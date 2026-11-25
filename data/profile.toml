@@ -92,7 +92,7 @@ subtitle = "Dependency groups from agentpool's uv.lock, plus my other Rust bindi
   name = "agentpool"
   repo = "agentpool"
   tagline = ["Agents of every kind in one YAML file,", "served over ACP · MCP · AG-UI · OpenCode"]
-  clients = ["Zed", "Toad", "OpenCode", "AG-UI apps"]
+  clients = ["Zed", "Toad", "OpenCode", "acptui"]
 
   [[ecosystem.group]]
   name = "Protocols & agent backends"
