@@ -1,0 +1,47 @@
+block-beta
+  columns 3
+  block:serves["Serves"]:1
+    columns 2
+    Zed Toad OpenCode acptui
+  end
+  hub["agentpool ★201<br/>agents of every kind<br/>in one YAML file<br/>ACP · MCP · AG-UI"]
+  block:perf["Performance: Rust in Python"]:1
+    columns 2
+    ripgrep_rs["ripgrep-rs"] sublime_search["sublime-search"] frizbee_rs["frizbee-rs"] mermaid_rs["mermaid-rs"]
+  end
+  block:proto["Protocols & agent backends"]:1
+    columns 2
+    aclientp clawd_code_sdk["clawd-code-sdk"] codexed pyt3client llmling_models["llmling-models"] tokonomics
+  end
+  block:tools["Tools & execution"]:1
+    columns 2
+    exxec docler searchly evented anyvoice
+  end
+  block:prompt["Prompting & UI"]:1
+    columns 2
+    promptantic slashed toprompt jinjarope clinspector
+  end
+  block:found["Foundation"]:2
+    columns 5
+    anyenv upathtools schemez epregistry yamling
+  end
+  block:docs["Docs toolchain"]:1
+    columns 1
+    mknodes["mknodes<br/>builds agentpool's docs"]
+  end
+  serves --> hub
+  hub --> perf
+  hub --> proto
+  hub --> tools
+  hub --> prompt
+  proto --> found
+  tools --> found
+  docs --> found
+  class serves cyan
+  class hub hub
+  class perf orange
+  class proto violet
+  class tools blue
+  class prompt amber
+  class found emerald
+  class docs pink

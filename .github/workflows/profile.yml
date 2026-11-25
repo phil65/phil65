@@ -1,4 +1,6 @@
-# Re-render the profile graphics weekly (ecosystem star counts) and on data changes.
+# Rebuild README.md and the profile graphics weekly (star counts) and on data / generator changes.
+# Timeline: drawn by scripts/generate.py. Ecosystem: Mermaid rendered by mmd-viz (npx).
+# README: built with mknodes (PEP 723 dependency of the script, installed by uv).
 name: Profile graphics
 on:
   schedule: [{cron: "0 6 * * 1"}]
@@ -13,16 +15,17 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-node@v5
         with:
-          python-version: "3.13"
+          node-version: 24
+      - uses: astral-sh/setup-uv@v7
       - name: Render
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python scripts/generate.py --fetch
+        run: uv run scripts/generate.py --fetch
       - name: Commit if changed
         run: |
-          git add assets data/stars.json
+          git add README.md assets data/stars.json
           if git diff --cached --quiet; then exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

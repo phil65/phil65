@@ -1,8 +1,8 @@
-# Data for the profile graphics. Edit this file, then run:
-#   python3 scripts/generate.py            # render assets/*.svg
-#   python3 scripts/generate.py --fetch    # refresh data/stars.json from the GitHub API first
+# Data for the profile README and its graphics. Edit this file, then run:
+#   uv run scripts/generate.py            # README.md, assets/*.svg, assets/ecosystem.mmd
+#   uv run scripts/generate.py --fetch    # refresh data/stars.json from the GitHub API first
 #
-# Ecosystem labels may contain {stars:<repo>}, replaced with the count from data/stars.json.
+# Labels may contain {stars:<repo>}, replaced with the count from data/stars.json.
 
 # Timeline: how the focus shifted, as periods with topics (no package names).
 # `ui` is the period's stop on the "UI / UX across stacks" rail at the bottom.
@@ -84,50 +84,117 @@ topics = [
 ]
 ui = "terminal UIs"
 
+# Ecosystem: written as a Mermaid block-beta diagram (assets/ecosystem.mmd), rendered by mmd-viz.
+# Blocks fill a grid of `columns` in order; `span` widens a block, `columns` sets its chip grid.
+# Colours are mmd-viz accents (cyan, indigo, amber, emerald, pink, rose, violet, blue, orange, teal).
 [ecosystem]
 title = "agentpool and the libraries it is built from"
-subtitle = "Dependency groups from agentpool's uv.lock, plus my other Rust bindings"
+footer = "dependency groups from agentpool's uv.lock · plus my other Rust bindings"
+alt = "agentpool and the libraries it is built from: clients it serves, Rust bindings, protocols and agent backends, tools and execution, prompting and UI, a shared foundation and the docs toolchain"
+mmd_viz = "0.14.0"
+columns = 3
+edges = [
+  ["serves", "hub"],
+  ["hub", "perf"],
+  ["hub", "proto"],
+  ["hub", "tools"],
+  ["hub", "prompt"],
+  ["proto", "found"],
+  ["tools", "found"],
+  ["docs", "found"],
+]
 
-  [ecosystem.hub]
-  name = "agentpool"
-  repo = "agentpool"
-  tagline = ["Agents of every kind in one YAML file,", "served over ACP · MCP · AG-UI · OpenCode"]
-  clients = ["Zed", "Toad", "OpenCode", "acptui"]
+  [[ecosystem.block]]
+  id = "serves"
+  name = "Serves"
+  color = "cyan"
+  packages = ["Zed", "Toad", "OpenCode", "acptui"]
 
-  [[ecosystem.group]]
-  name = "Protocols & agent backends"
-  color = "violet"
-  row = "top"
-  packages = ["aclientp", "clawd-code-sdk", "codexed", "pyt3client", "llmling-models", "tokonomics"]
+  [[ecosystem.block]]
+  id = "hub"
+  hub = true
+  label = ["agentpool ★{stars:agentpool}", "agents of every kind", "in one YAML file", "ACP · MCP · AG-UI"]
 
-  [[ecosystem.group]]
-  name = "Tools & execution"
-  color = "blue"
-  row = "top"
-  packages = ["exxec", "docler", "searchly", "evented", "anyvoice"]
-
-  # row = "side": the panel right of the hub
-  [[ecosystem.group]]
+  [[ecosystem.block]]
+  id = "perf"
   name = "Performance: Rust in Python"
   color = "orange"
-  row = "side"
   packages = ["ripgrep-rs", "sublime-search", "frizbee-rs", "mermaid-rs"]
 
-  [[ecosystem.group]]
+  [[ecosystem.block]]
+  id = "proto"
+  name = "Protocols & agent backends"
+  color = "violet"
+  packages = ["aclientp", "clawd-code-sdk", "codexed", "pyt3client", "llmling-models", "tokonomics"]
+
+  [[ecosystem.block]]
+  id = "tools"
+  name = "Tools & execution"
+  color = "blue"
+  packages = ["exxec", "docler", "searchly", "evented", "anyvoice"]
+
+  [[ecosystem.block]]
+  id = "prompt"
   name = "Prompting & UI"
   color = "amber"
-  row = "top"
   packages = ["promptantic", "slashed", "toprompt", "jinjarope", "clinspector"]
 
-  [[ecosystem.group]]
+  [[ecosystem.block]]
+  id = "found"
   name = "Foundation"
-  color = "green"
-  row = "bottom"
+  color = "emerald"
+  span = 2
+  columns = 5
   packages = ["anyenv", "upathtools", "schemez", "epregistry", "yamling"]
 
-  [[ecosystem.group]]
+  [[ecosystem.block]]
+  id = "docs"
   name = "Docs toolchain"
   color = "pink"
-  row = "bottom"
-  packages = ["mknodes"]
-  note = "builds agentpool's docs"
+  columns = 1
+  packages = ["mknodes<br/>builds agentpool's docs"]
+
+# README.md, built with mknodes (GitHub flavour).
+[readme]
+greeting = "Hi, I'm Philipp"
+intro = """
+I build developer tools in Python, and have done UI/UX on many stacks since 2012:
+Kodi (160 merged PRs to its C++ core, plus Python add-ons and templated skin markup), Qt desktop
+apps, web, terminal UIs and editor extensions. Today most of it flows into **[agentpool](https://github.com/phil65/agentpool)**,
+an experimental hub that connects AI agents over ACP and MCP.
+These days my AI agents maintain the whole stack: they plan, delegate tasks to other agents, run
+the releases, sweeps, docs and reviews, and I steer.
+"""
+timeline_alt = "How my focus moved, 2012 to now: Kodi; desktop UI and data science; docs and static sites; LLM tooling; agents; agent protocols. UI / UX across stacks runs through all of it."
+footnote = """
+The timeline is an approximation based on the repositories I maintain today; many older packages were deleted, archived or renamed.
+README built with [mknodes](https://github.com/phil65/mknodes) · ecosystem diagram rendered from Mermaid with [mmd-viz](https://github.com/phil65/mmd-viz) · timeline drawn by [`scripts/generate.py`](scripts/generate.py) · all from [`data/profile.toml`](data/profile.toml).
+"""
+
+  [[readme.featured]]
+  links = [["agentpool", "https://github.com/phil65/agentpool"]]
+  what = "Agents of every kind in one YAML file, served over ACP, MCP, AG-UI and OpenCode"
+
+  [[readme.featured]]
+  links = [["mknodes", "https://github.com/phil65/mknodes"]]
+  what = "Build Markdown documentation in Python from composable, project-aware nodes"
+
+  [[readme.featured]]
+  links = [["aclientp", "https://github.com/phil65/aclientp"], ["acptui", "https://github.com/phil65/acptui"]]
+  what = "Agent Client Protocol for Python (typed v1 and draft v2), and a terminal UI built on it"
+
+  [[readme.featured]]
+  links = [["upathtools", "https://github.com/phil65/upathtools"], ["jinjarope", "https://github.com/phil65/jinjarope"]]
+  what = "Filesystem toolkit for fsspec / universal-pathlib; Jinja2 toolkit"
+
+  [[readme.featured]]
+  links = [["mmd-viz", "https://github.com/phil65/mmd-viz"], ["framesheet", "https://github.com/phil65/framesheet"]]
+  what = "Mermaid to zero-JS animated SVG; frame-accurate contact sheets of animated SVGs"
+
+  [[readme.featured]]
+  links = [["PrettyQt", "https://github.com/phil65/PrettyQt"]]
+  what = "Pythonic wrapper for PyQt6 / PySide6"
+
+  [[readme.featured]]
+  links = [["script.extendedinfo", "https://github.com/phil65/script.extendedinfo"], ["Estuary", "https://github.com/phil65/skin.estuary"]]
+  what = "Kodi add-on with extended media info; Kodi's default skin"
