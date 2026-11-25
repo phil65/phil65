@@ -86,7 +86,7 @@ ui = "terminal UIs"
 
 [ecosystem]
 title = "agentpool and the libraries it is built from"
-subtitle = "Dependency groups from agentpool's uv.lock"
+subtitle = "Dependency groups from agentpool's uv.lock, plus my other Rust bindings"
 
   [ecosystem.hub]
   name = "agentpool"
@@ -104,7 +104,14 @@ subtitle = "Dependency groups from agentpool's uv.lock"
   name = "Tools & execution"
   color = "blue"
   row = "top"
-  packages = ["exxec", "docler", "searchly", "sublime-search", "ripgrep-rs", "evented", "anyvoice"]
+  packages = ["exxec", "docler", "searchly", "evented", "anyvoice"]
+
+  # row = "side": the panel right of the hub
+  [[ecosystem.group]]
+  name = "Performance: Rust in Python"
+  color = "orange"
+  row = "side"
+  packages = ["ripgrep-rs", "sublime-search", "frizbee-rs", "mermaid-rs"]
 
   [[ecosystem.group]]
   name = "Prompting & UI"

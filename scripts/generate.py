@@ -42,6 +42,7 @@ THEMES = {
         "chip_alpha": 0.12,
         "colors": {
             "pink": "#f472b6",
+            "orange": "#fb923c",
             "blue": "#60a5fa",
             "amber": "#fbbf24",
             "green": "#34d399",
@@ -63,8 +64,9 @@ THEMES = {
         "chip_alpha": 0.10,
         "colors": {
             "pink": "#db2777",
+            "orange": "#c2410c",
             "blue": "#2563eb",
-            "amber": "#b45309",
+            "amber": "#a16207",
             "green": "#059669",
             "violet": "#7c3aed",
             "indigo": "#4f46e5",
@@ -299,13 +301,16 @@ def render_ecosystem(cfg: dict, stars: dict[str, int], theme: dict) -> str:
 
     hub = cfg["hub"]
     top = [g for g in cfg["group"] if g["row"] == "top"]
+    side = next(g for g in cfg["group"] if g["row"] == "side")
     bottom = [g for g in cfg["group"] if g["row"] == "bottom"]
     foundation = next(g for g in bottom if len(g["packages"]) > 1)
     docs = next(g for g in bottom if g is not foundation)
 
-    # row 1: clients <- hub <- docs toolchain
+    # row 1: clients <- hub <- side group (Rust bindings)
     r1y, r1h = 84, 96
-    hx, hw = 340, 320
+    sw_ = 274  # width of the two side panels
+    hx = 32 + sw_ + 54
+    hw = E_W - 2 * hx
     body.append(
         f'<rect class="halo" x="{hx - 6}" y="{r1y - 6}" width="{hw + 12}" height="{r1h + 12}" rx="20" '
         f'fill="none" stroke="url(#hubg)" stroke-width="2"/>'
@@ -327,57 +332,60 @@ def render_ecosystem(cfg: dict, stars: dict[str, int], theme: dict) -> str:
     for i, line in enumerate(hub["tagline"]):
         body.append(t(hx + hw / 2, r1y + 60 + i * 16, line, "tag", "middle"))
 
-    # clients panel (left), packets flow out of the hub
-    cx, cw = 32, 248
-    body += panel(cx, r1y, cw, r1h, "Serves", c["neutral"], theme)
-    colw = (cw - 28 - 8) / 2
-    for i, name in enumerate(hub["clients"]):
-        body.append(chip(cx + 14 + (i % 2) * (colw + 8), r1y + 32 + (i // 2) * 30, colw, name, c["cyan"], theme))
-    wires.append((f"M{hx} {r1y + r1h / 2} H{cx + cw}", c["cyan"]))
+    def grid(px: float, py: float, pw: float, names: list[str], col: str, ncols: int = 2) -> None:
+        colw = (pw - 28 - (ncols - 1) * 8) / ncols
+        for i, name in enumerate(names):
+            x_ = px + 14 + (i % ncols) * (colw + 8)
+            body.append(chip(x_, py + 32 + (i // ncols) * 30, colw, name, col, theme))
 
-    # docs toolchain panel (right)
-    dx = 720
-    dw = E_W - 32 - dx
-    dcol = c[docs["color"]]
-    body += panel(dx, r1y, dw, r1h, docs["name"], dcol, theme)
-    for i, name in enumerate(docs["packages"]):
-        body.append(chip(dx + 14, r1y + 32 + i * 30, 110, name, dcol, theme))
-    if note := docs.get("note"):
-        body.append(t(dx + 14, r1y + 78, note, "pnote"))
-    wires.append((f"M{dx} {r1y + r1h / 2} H{hx + hw}", dcol))
+    # clients panel (left), packets flow out of the hub
+    body += panel(32, r1y, sw_, r1h, "Serves", c["neutral"], theme)
+    grid(32, r1y, sw_, hub["clients"], c["cyan"])
+    wires.append((f"M{hx} {r1y + r1h / 2} H{32 + sw_}", c["cyan"]))
+
+    # side panel (right), feeding the hub
+    sx = E_W - 32 - sw_
+    scol = c[side["color"]]
+    body += panel(sx, r1y, sw_, r1h, side["name"], scol, theme)
+    grid(sx, r1y, sw_, side["packages"], scol)
+    wires.append((f"M{sx} {r1y + r1h / 2} H{hx + hw}", scol))
 
     # row 2: three groups feeding the hub
     r2y = 226
     pw = (E_W - 64 - 2 * 20) / 3
     rows = max((len(g["packages"]) + 1) // 2 for g in top)
     ph = 34 + rows * 30 + 6
-    colw = (pw - 28 - 8) / 2
     centers = []
     for gi, g in enumerate(top):
         px = 32 + gi * (pw + 20)
         col = c[g["color"]]
         body += panel(px, r2y, pw, ph, g["name"], col, theme)
-        for i, name in enumerate(g["packages"]):
-            body.append(chip(px + 14 + (i % 2) * (colw + 8), r2y + 32 + (i // 2) * 30, colw, name, col, theme))
+        grid(px, r2y, pw, g["packages"], col)
         pcx = px + pw / 2
         centers.append(pcx)
-        hbx = hx + hw / 2 + (gi - 1) * 90
+        hbx = hx + hw / 2 + (gi - 1) * 80
         wires.append(
             (f"M{pcx:.1f} {r2y} C{pcx:.1f} {r2y - 26} {hbx:.1f} {r1y + r1h + 26} {hbx:.1f} {r1y + r1h}", col)
         )
 
-    # row 3: foundation, feeding every group
+    # row 3: foundation (feeding every group) and the docs toolchain under the last column
     r3y = r2y + ph + 40
     fh = 34 + 30
     fcol = c[foundation["color"]]
-    fw = E_W - 64
+    dx = 32 + 2 * (pw + 20)
+    fw = dx - 20 - 32
     body += panel(32, r3y, fw, fh, foundation["name"], fcol, theme)
-    n = len(foundation["packages"])
-    cwid = (fw - 28 - (n - 1) * 10) / n
-    for i, name in enumerate(foundation["packages"]):
-        body.append(chip(46 + i * (cwid + 10), r3y + 32, cwid, name, fcol, theme))
-    for pcx in centers:
+    grid(32, r3y, fw, foundation["packages"], fcol, len(foundation["packages"]))
+    for pcx in centers[:-1]:
         wires.append((f"M{pcx:.1f} {r3y} V{r2y + ph}", fcol))
+    fx, px3 = 32 + fw - 40, centers[-1] - 100
+    wires.append((f"M{fx:.1f} {r3y} C{fx:.1f} {r3y - 22} {px3:.1f} {r2y + ph + 22} {px3:.1f} {r2y + ph}", fcol))
+    dcol = c[docs["color"]]
+    body += panel(dx, r3y, pw, fh, docs["name"], dcol, theme)
+    body.append(chip(dx + 14, r3y + 32, 110, docs["packages"][0], dcol, theme))
+    if note := docs.get("note"):
+        body.append(t(dx + 136, r3y + 48.5, note, "pnote"))
+    wires.append((f"M{32 + fw} {r3y + fh / 2 + 10} H{dx}", fcol))
 
     h = int(r3y + fh + 32)
     count = sum(len(g["packages"]) for g in cfg["group"])

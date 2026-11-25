@@ -4,6 +4,8 @@ I build developer tools in Python, and have done UI/UX on many stacks since 2012
 Kodi (160 merged PRs to its C++ core, plus Python add-ons and templated skin markup), Qt desktop
 apps, web, terminal UIs and editor extensions. Today most of it flows into **[agentpool](https://github.com/phil65/agentpool)**,
 an experimental hub that connects AI agents over ACP and MCP.
+These days my AI agents maintain the whole stack: they plan, delegate tasks to other agents, run
+the releases, sweeps, docs and reviews, and I steer.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/timeline-dark.svg">
