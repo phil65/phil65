@@ -71,7 +71,7 @@ topics = [
   "filesystem abstractions",
   "Rust bindings",
 ]
-ui = "web UIs"
+ui = "full-stack web apps"
 
 [[timeline.period]]
 years = "2026"
